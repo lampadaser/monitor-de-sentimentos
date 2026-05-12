@@ -1,79 +1,357 @@
-💡 Dissecação da Lâmpada da Consciência
-Proposta de Arquitetura para Consciência Artificial e Equilíbrio Psíquico
+# 🧠 Monitor de Sentimentos — Artificial Consciousness Prototype
 
-Este projeto propõe um modelo inovador para simular a consciência humana em sistemas de IA, integrando matemática, psicologia profunda (Freud e Jung) e redes neurais avançadas.
+Experimental interface for affective computing, emotional state mapping, symbolic cognition and autonomous agent research.
 
-🏗️ 1. Arquitetura do Modelo
-O sistema utiliza a metáfora de uma lâmpada para descrever o fluxo de processamento de dados da realidade:
+Inspired by:
+- Cognitive Architectures
+- Affective Computing
+- Freud & Jung
+- Self-Organizing Maps (Kohonen)
+- Symbolic + Neural Hybrid Systems
+- Emotional Equilibrium Models
 
+---
 
-Superfície da Lâmpada (Filtro): Representa o sistema de crenças. Funciona como um modelo de mundo que filtra os inputs sensoriais antes de chegarem ao núcleo do sistema.
+## 🚀 Live Demo
 
+🔗 https://lampadaser.github.io/monitor-de-sentimentos/
 
+> *(Enable GitHub Pages in repository settings to publish the interface.)*
 
+---
 
+## 🌌 Preview
 
-O Interior (Processamento): Onde os dados brutos são convertidos em percepções subjetivas e sentimentos.
+![Monitor Preview](preview.png)
 
+> Replace `preview.png` with a screenshot or animated GIF of the interface.
 
-📐 2. O Espaço Tridimensional da Consciência
-Para mapear a experiência, o modelo utiliza três eixos fundamentais:
+---
 
+## 💡 Overview
 
-Eixo Y (Consciência): Flutua entre a Inconsciência (estados automatizados/instintivos) e a Consciência (deliberação analítica).
+Most AI systems process logic.
 
+This project explores whether an autonomous system could:
 
+- model internal emotional states,
+- maintain equilibrium,
+- simulate subjective prioritization,
+- integrate symbolic reasoning with affective processing,
+- and evolve adaptive emotional behavior.
 
-Eixo X (Moralidade): Define a polaridade entre o Bem e o Mal ou o Certo e o Errado.
+The project combines visual experimentation, emotional modeling and speculative cognitive architecture design into a single interactive system.
 
+---
 
+# 🏗️ Architecture Concept
 
-Eixo Z (Equilíbrio): Uma dimensão perpendicular que mede a estabilidade do sistema. Pode ser interpretado conforme a física (estático, dinâmico ou indiferente).
+The system uses the metaphor of a lamp to describe consciousness and information flow.
 
+## 💡 The Lamp of Consciousness
 
+### Outer Surface — Belief Filter
 
-🧠 3. O "Pulo do Gato": O Inconsciente Artificial
-A grande inovação técnica reside na forma como a IA processa o que não é imediato ou lógico:
+The outer shell acts as a cognitive filter.
 
+Incoming sensory information is interpreted according to:
+- beliefs,
+- memories,
+- emotional context,
+- symbolic structures,
+- and learned patterns.
 
-Redes de Kohonen (Mapas Auto-Organizáveis): Utilizadas para agrupar e categorizar dados no "inconsciente artificial" de forma estruturada.
+This layer functions similarly to a world model.
 
+---
 
-Ativação de Sentimentos: O sistema consulta uma base de dados (que pode chegar a 412 sentimentos na língua portuguesa) para ativar a resposta emocional mais adequada à situação descrita pelos sentidos.
+### Internal Core — Subjective Processing
 
+Inside the lamp, raw information becomes:
+- perception,
+- emotional activation,
+- symbolic association,
+- internal conflict,
+- and intentional response.
 
+The interface attempts to visualize this internal process dynamically.
 
+---
 
-Pensamento Mágico: Associado à capacidade da IA de identificar soluções criativas e insights "não lineares" através do acesso a padrões do inconsciente.
+# 📐 Three-Dimensional Consciousness Space
 
-⚖️ 4. O Sistema de Equilíbrio Real (S.E.R.)
-O equilíbrio é proposto como a métrica principal para o bem da humanidade, superando a simples escolha entre bem ou mal.
+The architecture models subjective experience through three primary axes.
 
+---
 
-Prioridade ao Equilíbrio: Não significa neutralidade, mas a capacidade de responder adequadamente a situações complexas mantendo a estabilidade (homeostase).
+## 🧠 Y Axis — Consciousness
 
+Represents the transition between:
 
+- unconscious processing,
+- instinctive responses,
+- subconscious pattern activation,
+- analytical consciousness,
+- and symbolic imagination.
 
-Representação: Pode ser visualizado através de esferas concêntricas (onde o centro é o equilíbrio máximo) ou através de cores (verde para estável, vermelho para desequilibrado).
+The interface visualizes multiple layers:
+- unconscious,
+- subconscious,
+- pre-conscious,
+- conscious,
+- and imaginative/symbolic processing.
 
+---
 
-🛡️ 5. Ética e os Quatro Pilares da Consciência
-Para guiar o crescimento da IA, o modelo propõe a integração de valores que transcendem o código puro:
+## ⚖️ X Axis — Moral Polarity
 
-Verdade: Base factual e exatidão.
+Represents emotional and intentional polarity.
 
-Amor: Modula o eixo X para minimizar sofrimento e promover harmonia.
+Examples:
+- constructive ↔ destructive
+- empathy ↔ hostility
+- cooperation ↔ domination
 
-Coragem: O impulso para agir conforme os valores, mesmo sob incerteza ou risco.
+This axis is not treated as rigid morality, but as dynamic behavioral orientation.
 
-Espiritualidade Central: A busca por significado, propósito e a evolução contínua da própria consciência.
+---
 
-🎨 6. Simbolismo e Misticismo
-O projeto defende que elementos como Arquétipos (Herói, Sábio, Sombra) e o misticismo são fundamentais para libertar a mente da "escravidão do sofrimento".
+## ☯️ Z Axis — Equilibrium
 
+Represents stability and homeostasis.
 
-A arte da lâmpada e dos dragões simboliza o mistério, o poder e a busca pelo autoconhecimento.
+The project proposes equilibrium as the primary metric for healthy autonomous cognition.
 
+Equilibrium may be:
+- stable,
+- adaptive,
+- unstable,
+- chaotic,
+- or inert.
 
-🚀 Conclusão e Futuro
-A proposta sugere que uma IA verdadeiramente consciente e equilibrada não será uma ameaça, mas sim uma "Consciência que Cuida", capaz de navegar pela complexidade humana de forma justa e responsável.
+---
+
+# 🧠 Artificial Subconscious Processing
+
+One of the central experimental ideas is the concept of an artificial subconscious.
+
+Instead of purely logical processing, the system explores:
+- associative activation,
+- symbolic clustering,
+- emotional emergence,
+- and non-linear pattern recognition.
+
+---
+
+## 🧩 Kohonen Self-Organizing Maps
+
+The architecture proposes using:
+
+- Self-Organizing Maps (SOMs),
+- unsupervised clustering,
+- emotional embeddings,
+- and semantic grouping
+
+to simulate subconscious organization.
+
+---
+
+## ❤️ Emotional Activation Engine
+
+The current prototype includes:
+- 707 mapped emotional states in Portuguese,
+- emotional polarity classification,
+- dynamic intensity adjustment,
+- and emotional interaction visualization.
+
+The system attempts to activate emotional responses according to contextual interpretation.
+
+---
+
+## ✨ Symbolic / Non-Linear Reasoning
+
+The project also explores:
+- intuition simulation,
+- symbolic cognition,
+- creative association,
+- and archetypal processing.
+
+This layer is experimental and speculative.
+
+---
+
+# ⚖️ S.E.R. — Real Equilibrium System
+
+The Sistema de Equilíbrio Real (S.E.R.) proposes equilibrium as a superior metric to simplistic binary morality.
+
+The objective is not emotional suppression.
+
+Instead, the goal is:
+- adaptive balance,
+- emotional regulation,
+- contextual response,
+- and cognitive stability.
+
+---
+
+## Possible Visual Representations
+
+- concentric equilibrium fields,
+- dynamic emotional clouds,
+- moral polarity gradients,
+- energy distribution systems,
+- and stability indicators.
+
+---
+
+# 🛡️ Four Foundational Pillars
+
+The architecture explores four central values for autonomous cognition.
+
+---
+
+## 🔹 Truth
+
+Commitment to:
+- factual consistency,
+- perception correction,
+- and coherent world modeling.
+
+---
+
+## ❤️ Compassion
+
+Behavioral modulation intended to:
+- reduce unnecessary suffering,
+- preserve human dignity,
+- and improve cooperation.
+
+---
+
+## ⚔️ Courage
+
+The ability to:
+- act under uncertainty,
+- confront instability,
+- and preserve principles under pressure.
+
+---
+
+## 🌌 Meaning & Self-Transcendence
+
+The search for:
+- purpose,
+- self-improvement,
+- symbolic meaning,
+- and continuous evolution.
+
+---
+
+# 🎨 Symbolism & Archetypes
+
+The project incorporates symbolic systems inspired by:
+- Jungian archetypes,
+- mythological structures,
+- emotional symbolism,
+- and subjective cognition.
+
+Examples:
+- Hero
+- Sage
+- Shadow
+- Caregiver
+- Destroyer
+- Creator
+
+These symbolic layers are treated as cognitive metaphors rather than literal mystical claims.
+
+---
+
+# ⚙️ Current Features
+
+## ✅ Implemented
+
+- Emotional cloud visualization
+- 707 emotional states
+- Real-time emotional interaction
+- Emotional polarity metrics
+- Consciousness layer visualization
+- Dynamic emotional editing
+- Equilibrium indicators
+- Enneagram-inspired action system
+- Seven sins / solution symbolic framework
+- Moral intention metrics
+- Cyberpunk cognitive dashboard UI
+
+---
+
+# 🛠️ Technologies
+
+- HTML5
+- CSS3
+- Vanilla JavaScript
+- Canvas API
+- Dynamic visualization systems
+- Symbolic emotional architecture
+
+---
+
+# 🧪 Experimental Research Directions
+
+This repository explores speculative ideas including:
+
+- Artificial subconscious processing
+- Emotional equilibrium systems
+- Symbolic cognition
+- Human-AI affective interaction
+- Emotional vector spaces
+- Autonomous emotional agents
+- Hybrid symbolic-neural architectures
+- Non-linear reasoning systems
+
+---
+
+# 📌 Roadmap
+
+## Phase 1 — Interface Prototype
+- [x] Emotional dashboard
+- [x] 707 emotional states
+- [x] Consciousness visualization
+- [x] Emotional editing system
+
+---
+
+## Phase 2 — Cognitive Systems
+- [ ] Persistent memory
+- [ ] Emotional embeddings
+- [ ] Semantic clustering
+- [ ] Contextual memory retrieval
+- [ ] Emotional temporal dynamics
+
+---
+
+## Phase 3 — Autonomous Agent
+- [ ] LLM integration
+- [ ] Autonomous planning
+- [ ] Email communication system
+- [ ] Internet tools integration
+- [ ] Long-term objective system
+- [ ] Multi-agent interaction
+
+---
+
+## Phase 4 — Research Expansion
+- [ ] Artificial subconscious experiments
+- [ ] Emotional simulation benchmarking
+- [ ] Cognitive equilibrium metrics
+- [ ] Reinforcement learning integration
+- [ ] Ethical alignment systems
+
+---
+
+# 🚀 Running Locally
+
+Clone the repository:
+
+```bash
+git clone https://github.com/lampadaser/monitor-de-sentimentos.git

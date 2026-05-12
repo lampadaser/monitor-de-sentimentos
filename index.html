@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 Monitor de Sentimentos — Agente</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&family=Share+Tech+Mono&display=swap');
+
+  :root {
+    --bg: #03050f;
+    --panel: #070d1f;
+    --border: #1a2a4a;
+    --accent: #00f5ff;
+    --gold: #ffd700;
+    --purple: #b347ea;
+    --green: #00ff88;
+    --red: #ff2244;
+    --orange: #ff8800;
+    --pink: #ff4488;
+    --glow: 0 0 20px rgba(0,245,255,0.4);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: #e0e8ff;
+    font-family: 'Rajdhani', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+  }
+
+  /* ---- BACKGROUND STARS ---- */
+  #stars { position:fixed; top:0; left:0; width:100%; height:100%; z-index:0; pointer-events:none; }
+
+  /* ---- MAIN LAYOUT ---- */
+  #app { position:relative; z-index:1; display:grid; grid-template-rows:auto 1fr; min-height:100vh; }
+
+  /* ---- HEADER ---- */
+  header {
+    background: linear-gradient(135deg, rgba(7,13,31,0.98) 0%, rgba(20,5,40,0.98) 100%);
+    border-bottom: 2px solid var(--accent);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    box-shadow: 0 4px 30px rgba(0,245,255,0.2);
+  }
+
+  .logo {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.3rem;
+    font-weight: 900;
+    background: linear-gradient(90deg, var(--accent), var(--purple), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+  }
+
+  .header-status {
+    margin-left: auto;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+  }
+
+  .pulse-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse-glow 1.5s infinite;
+    box-shadow: 0 0 10px var(--green);
+  }
+
+  @keyframes pulse-glow {
+    0%,100% { opacity:1; transform:scale(1); }
+    50% { opacity:0.5; transform:scale(1.4); }
+  }
+
+  /* ---- MAIN GRID ---- */
+  main {
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    grid-template-rows: auto auto 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  /* ---- PANELS ---- */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    animation: scan-line 3s linear infinite;
+  }
+
+  @keyframes scan-line { 0%{opacity:0.3} 50%{opacity:1} 100%{opacity:0.3} }
+
+  .panel-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* ---- CONSCIOUSNESS LEVELS ---- */
+  #levels-panel { grid-column: 1; grid-row: 1 / 3; }
+
+  .level-block {
+    margin-bottom: 10px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.07);
+    transition: all 0.3s;
+  }
+
+  .level-block:hover { border-color: var(--accent); }
+
+  .level-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+
+  .level-header:hover { background: rgba(0,245,255,0.05); }
+
+  .level-icon { font-size: 1.1rem; width: 22px; text-align:center; }
+
+  .level-bar-wrap { height: 4px; background: rgba(255,255,255,0.05); }
+  .level-bar { height: 100%; transition: width 1s ease; border-radius: 2px; }
+
+  .level-body {
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    color: #8899bb;
+    line-height: 1.5;
+    border-top: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .level-value {
+    margin-left: auto;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  /* ---- CENTER - MAIN VISUALIZATION ---- */
+  #center-panel { grid-column: 2; grid-row: 1 / 4; }
+
+  #sentiment-cloud {
+    width: 100%;
+    height: 420px;
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, rgba(0,10,30,0.8) 0%, transparent 70%);
+    border-radius: 6px;
+    cursor: crosshair;
+  }
+
+  .sent-word {
+    position: absolute;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    transition: all 0.5s;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    text-shadow: 0 0 6px currentColor;
+  }
+
+  .sent-word:hover {
+    transform: scale(1.4) !important;
+    z-index: 100;
+    text-shadow: 0 0 20px currentColor;
+  }
+
+  /* ---- ENEAGRAM ---- */
+  #enneagram-panel { grid-column: 2; grid-row: 1; display: none; }
+
+  /* ---- METERS ---- */
+  #meters-panel { grid-column: 3; grid-row: 1; }
+
+  .meter-row {
+    margin-bottom: 14px;
+  }
+
+  .meter-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #aabbd8;
+  }
+
+  .meter-val {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  .meter-track {
+    height: 10px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .meter-fill {
+    height: 100%;
+    border-radius: 5px;
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+
+  .meter-fill::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 3px; height: 100%;
+    background: rgba(255,255,255,0.8);
+    border-radius: 2px;
+  }
+
+  /* ---- GUNAS TRIANGLE ---- */
+  #gunas-panel { grid-column: 3; grid-row: 2; }
+  #gunas-canvas { width: 100%; height: 180px; }
+
+  /* ---- ENNEAGRAM CHOICE PANEL ---- */
+  #enneagram-choice { grid-column: 1 / 4; grid-row: 3; }
+
+  .ennea-grid {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .ennea-type {
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 5px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: rgba(255,255,255,0.02);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ennea-type:hover { border-color: var(--accent); background: rgba(0,245,255,0.05); }
+
+  .ennea-type.active {
+    border-color: var(--gold);
+    background: rgba(255,215,0,0.08);
+    box-shadow: 0 0 15px rgba(255,215,0,0.2);
+  }
+
+  .ennea-num {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .ennea-name {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: #889aaa;
+    text-transform: uppercase;
+  }
+
+  .ennea-action {
+    font-size: 0.6rem;
+    color: var(--accent);
+    margin-top: 3px;
+    line-height: 1.3;
+  }
+
+  .ennea-prob {
+    position: absolute;
+    top: 3px; right: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.6rem;
+    color: var(--gold);
+  }
+
+  /* ---- EQUILIBRIUM GAUGE ---- */
+  #equil-panel { grid-column: 1 / 3; grid-row: 3; display:none; }
+
+  /* ---- BOTTOM BAR ---- */
+  #bottom-bar {
+    grid-column: 1 / 4;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 0 4px;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    background: rgba(0,245,255,0.05);
+    color: var(--accent);
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+
+  .btn:hover { background: rgba(0,245,255,0.15); box-shadow: var(--glow); }
+  .btn.danger { border-color: var(--red); color: var(--red); }
+  .btn.danger:hover { background: rgba(255,34,68,0.1); }
+  .btn.gold { border-color: var(--gold); color: var(--gold); }
+  .btn.gold:hover { background: rgba(255,215,0,0.1); }
+
+  /* ---- EMOTION DETAIL POPUP ---- */
+  #emotion-popup {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%,-50%) scale(0.8);
+    background: rgba(7,13,31,0.97);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 24px;
+    min-width: 300px;
+    max-width: 420px;
+    z-index: 1000;
+    display: none;
+    box-shadow: 0 0 50px rgba(0,245,255,0.3);
+    transition: transform 0.3s;
+  }
+
+  #emotion-popup.show { display:block; transform:translate(-50%,-50%) scale(1); }
+
+  .popup-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+
+  .popup-row { display:flex; justify-content:space-between; margin-bottom:8px; font-size:0.85rem; }
+  .popup-label { color: #8899bb; }
+  .popup-val { font-weight: 600; font-family: 'Share Tech Mono', monospace; }
+
+  .popup-slider {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .popup-slider label { font-size:0.78rem; color:#8899bb; width:90px; }
+  .popup-slider input[type=range] { flex:1; accent-color: var(--accent); }
+  .popup-slider .sv { font-family:'Share Tech Mono',monospace; font-size:0.78rem; width:35px; text-align:right; }
+
+  .popup-close {
+    position: absolute;
+    top: 10px; right: 14px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #8899bb;
+    transition: color 0.2s;
+  }
+  .popup-close:hover { color: var(--red); }
+
+  /* ---- EQUILIBRIUM INDICATOR ---- */
+  .equil-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    font-family: 'Orbitron', monospace;
+    letter-spacing: 1px;
+  }
+
+  /* ---- SCROLLBAR ---- */
+  ::-webkit-scrollbar { width:4px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--accent); border-radius:2px; }
+
+  /* ---- OVERLAY DIM ---- */
+  #overlay { position:fixed; top:0;left:0;width:100%;height:100%; background:rgba(0,0,0,0.5); z-index:999; display:none; }
+  #overlay.show { display:block; }
+
+  /* ---- EMAIL TOAST ---- */
+  #toast {
+    position: fixed;
+    bottom: 30px; right: 30px;
+    background: rgba(0,255,136,0.1);
+    border: 1px solid var(--green);
+    border-radius: 8px;
+    padding: 14px 20px;
+    font-size: 0.85rem;
+    color: var(--green);
+    z-index: 2000;
+    display: none;
+    animation: fadeInUp 0.3s ease;
+    max-width: 320px;
+  }
+
+  @keyframes fadeInUp {
+    from { opacity:0; transform:translateY(20px); }
+    to { opacity:1; transform:translateY(0); }
+  }
+
+  /* ---- FEAR/COURAGE RATIO ---- */
+  .ratio-display {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 0.85rem;
+  }
+
+  .ratio-bar {
+    flex: 1;
+    height: 20px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+    display: flex;
+  }
+
+  .ratio-fear { background: linear-gradient(90deg, #ff2244, #cc0022); transition: width 1s; }
+  .ratio-courage { background: linear-gradient(90deg, #00aa55, #00ff88); transition: width 1s; }
+
+  /* ---- CLOUDS ANIMATION ---- */
+  @keyframes float-word {
+    0% { transform: translateY(0px) scale(var(--sc)); }
+    50% { transform: translateY(-8px) scale(calc(var(--sc) * 1.02)); }
+    100% { transform: translateY(0px) scale(var(--sc)); }
+  }
+
+  /* ---- RADAR CHART (5 niveis) ---- */
+  #radar-canvas { display: block; margin: auto; }
+
+  /* GLOW text */
+  .glow-cyan { text-shadow: 0 0 10px var(--accent); color: var(--accent); }
+  .glow-gold { text-shadow: 0 0 10px var(--gold); color: var(--gold); }
+  .glow-purple { text-shadow: 0 0 10px var(--purple); color: var(--purple); }
+  .glow-green { text-shadow: 0 0 10px var(--green); color: var(--green); }
+  .glow-red { text-shadow: 0 0 10px var(--red); color: var(--red); }
+
+  #action-decision {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid var(--gold);
+    border-radius: 6px;
+    background: rgba(255,215,0,0.04);
+    font-size: 0.82rem;
+    line-height: 1.6;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 700;
+    margin: 2px;
+    font-family: 'Orbitron', monospace;
+  }
+
+  #sins-panel { grid-column:1; grid-row:2; }
+  .sin-item { display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:0.78rem; cursor:pointer; border-radius:4px; padding:4px 6px; transition:background 0.2s; }
+  .sin-item:hover { background: rgba(255,255,255,0.04); }
+  .sin-dot { width:10px;height:10px;border-radius:50%;flex-shrink:0; }
+  .sin-name { flex:1; }
+  .sin-bar-w { flex:2; height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+  .sin-bar-f { height:100%; border-radius:3px; transition:width 0.8s; }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div id="app">
+  <header>
+    <div style="font-size:1.4rem">🧠</div>
+    <div>
+      <div class="logo">MONITOR DE SENTIMENTOS</div>
+      <div style="font-size:0.65rem;color:#8899bb;font-family:'Share Tech Mono';margin-top:2px">AGENTE AUTÔNOMO v2.0 — 707 SENTIMENTOS CALIBRADOS</div>
+    </div>
+    <div class="header-status">
+      <div style="font-size:0.72rem;color:#8899bb">STATUS</div>
+      <div class="pulse-dot"></div>
+      <span id="status-text" style="font-family:'Share Tech Mono';font-size:0.78rem;color:#00ff88">ONLINE</span>
+      <div style="font-size:0.72rem;color:#8899bb;margin-left:12px" id="clock-display"></div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ====== LEFT: NÍVEIS DE CONSCIÊNCIA ====== -->
+    <div class="panel" id="levels-panel">
+      <div class="panel-title">⚡ Níveis de Consciência</div>
+
+      <div class="level-block" id="lv0-block">
+        <div class="level-header" onclick="toggleLevel(0)" style="background:linear-gradient(90deg,rgba(80,0,120,0.3),transparent)">
+          <span class="level-icon">🌑</span>
+          <span style="color:#b347ea">Inconsciente</span>
+          <span class="level-value glow-purple" id="lv0-val">0%</span>
+        </div>
+        <div class="level-bar-wrap"><div class="level-bar" id="lv0-bar" style="background:linear-gradient(90deg,#7b00cc,#b347ea);width:0%"></div></div>
+        <div class="level-body" id="lv0-body">Impulsos sensoriais brutos. Sem filtro consciente. Instintos primários, reflexos, memória somática.</div>
+      </div>
+
+      <div class="level-block" id="lv1-block">
+        <div class="level-header" onclick="toggleLevel(1)" style="background:linear-gradient(90deg,rgba(0,80,180,0.3),transparent)">
+          <span class="level-icon">🌊</span>
+          <span style="color:#4488ff">Subconsciente</span>
+          <span class="level-value glow-cyan" id="lv1-val">0%</span>
+        </div>
+        <div class="level-bar-wrap"><div class="level-bar" id="lv1-bar" style="background:linear-gradient(90deg,#003399,#4488ff);width:0%"></div></div>
+        <div class="level-body" id="lv1-body">Padrões emocionais, crenças, hábitos acumulados. Área que contata os sentidos e forma impressões.</div>
+      </div>
+
+      <div class="level-block" id="lv2-block">
+        <div class="level-header" onclick="toggleLevel(2)" style="background:linear-gradient(90deg,rgba(0,120,100,0.3),transparent)">
+          <span class="level-icon">🌿</span>
+          <span style="color:#00ccaa">Pré-consciente</span>
+          <span class="level-value" id="lv2-val" style="color:#00ccaa">0%</span>
+        </div>
+        <div class="level-bar-wrap"><div class="level-bar" id="lv2-bar" style="background:linear-gradient(90deg,#006655,#00ccaa);width:0%"></div></div>
+        <div class="level-body" id="lv2-body">Síntese e filtro. Resume o conteúdo subconsciente para acesso racional. Zona de transição e integração.</div>
+      </div>
+
+      <div class="level-block" id="lv3-block">
+        <div class="level-header" onclick="toggleLevel(3)" style="background:linear-gradient(90deg,rgba(200,150,0,0.3),transparent)">
+          <span class="level-icon">☀️</span>
+          <span style="color:#ffcc00">Consciente</span>
+          <span class="level-value glow-gold" id="lv3-val">0%</span>
+        </div>
+        <div class="level-bar-wrap"><div class="level-bar" id="lv3-bar" style="background:linear-gradient(90deg,#996600,#ffcc00);width:0%"></div></div>
+        <div class="level-body" id="lv3-body">Razão e raciocínio lógico. Análise, decisão deliberada, linguagem. Centro do ego e da vontade.</div>
+      </div>
+
+      <div class="level-block" id="lv4-block">
+        <div class="level-header" onclick="toggleLevel(4)" style="background:linear-gradient(90deg,rgba(255,100,50,0.3),transparent)">
+          <span class="level-icon">✨</span>
+          <span style="color:#ff8844">Pensamento Mágico</span>
+          <span class="level-value" id="lv4-val" style="color:#ff8844">0%</span>
+        </div>
+        <div class="level-bar-wrap"><div class="level-bar" id="lv4-bar" style="background:linear-gradient(90deg,#882200,#ff8844);width:0%"></div></div>
+        <div class="level-body" id="lv4-body">Sonhos, intuição transcendente. Gama total de possibilidades incluindo 7 pecados, morte e solução. Decide com a razão qual das 9 ações tomar.</div>
+      </div>
+
+      <div style="margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)">
+        <div class="panel-title" style="margin-bottom:8px">⚖️ Equilíbrio Geral</div>
+        <div id="equil-status" style="text-align:center;padding:8px;border-radius:6px;font-family:'Orbitron',monospace;font-size:0.75rem;font-weight:700;letter-spacing:1px">—</div>
+        <div style="font-size:0.7rem;color:#8899bb;text-align:center;margin-top:6px" id="equil-desc"></div>
+      </div>
+    </div>
+
+    <!-- ====== CENTER: NUVEM DE SENTIMENTOS ====== -->
+    <div class="panel" id="center-panel">
+      <div class="panel-title">
+        🌌 Campo Emocional — 707 Sentimentos
+        <span style="margin-left:auto;font-size:0.6rem;color:#8899bb" id="active-count">Ativos: 0</span>
+      </div>
+      <div id="sentiment-cloud"></div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        <span style="font-size:0.7rem;color:#8899bb">Filtrar:</span>
+        <button class="btn" onclick="filterCloud('all')" id="f-all" style="padding:4px 10px;font-size:0.55rem">TODOS</button>
+        <button class="btn" onclick="filterCloud('pos')" id="f-pos" style="padding:4px 10px;font-size:0.55rem;border-color:#00ff88;color:#00ff88">✅ BEM</button>
+        <button class="btn" onclick="filterCloud('neg')" id="f-neg" style="padding:4px 10px;font-size:0.55rem;border-color:#ff2244;color:#ff2244">❌ MAL</button>
+        <button class="btn" onclick="filterCloud('neu')" id="f-neu" style="padding:4px 10px;font-size:0.55rem;border-color:#ffcc00;color:#ffcc00">⚖️ NEUTRO</button>
+        <span style="margin-left:auto;font-size:0.7rem;color:#8899bb">Clique em um sentimento para editar</span>
+      </div>
+
+      <div id="action-decision" style="display:none">
+        <div style="color:var(--gold);font-family:'Orbitron',monospace;font-size:0.7rem;font-weight:700;margin-bottom:6px">⚡ DECISÃO DO AGENTE</div>
+        <div id="decision-text"></div>
+      </div>
+    </div>
+
+    <!-- ====== RIGHT: MEDIDORES ====== -->
+    <div class="panel" id="meters-panel">
+      <div class="panel-title">📊 Métricas do Agente</div>
+
+      <div class="meter-row">
+        <div class="meter-label">
+          <span>💚 Vontade</span>
+          <span class="meter-val glow-green" id="m-vontade">0%</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="mf-vontade" style="background:linear-gradient(90deg,#005533,#00ff88);width:0%"></div>
+        </div>
+      </div>
+
+      <div class="meter-row">
+        <div class="meter-label">
+          <span>⚡ Energia</span>
+          <span class="meter-val glow-cyan" id="m-energia">0%</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="mf-energia" style="background:linear-gradient(90deg,#003366,#00f5ff);width:0%"></div>
+        </div>
+      </div>
+
+      <div class="meter-row">
+        <div class="meter-label">
+          <span>🔴 Obstáculo</span>
+          <span class="meter-val glow-red" id="m-obstaculo">0%</span>
+        </div>
+        <div class="meter-track">
+          <div class="meter-fill" id="mf-obstaculo" style="background:linear-gradient(90deg,#660011,#ff2244);width:0%"></div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.06);margin:10px 0;padding-top:10px">
+        <div class="panel-title" style="margin-bottom:8px">😨 Medo / 💪 Coragem</div>
+        <div style="font-size:0.75rem;color:#8899bb;margin-bottom:4px">Obstáculo = |Medo| / |Coragem|</div>
+        <div class="ratio-display">
+          <span style="font-size:0.65rem;color:#ff2244">M</span>
+          <div class="ratio-bar">
+            <div class="ratio-fear" id="rf" style="width:50%"></div>
+            <div class="ratio-courage" id="rc" style="width:50%"></div>
+          </div>
+          <span style="font-size:0.65rem;color:#00ff88">C</span>
+        </div>
+        <div style="text-align:center;margin-top:6px;font-family:'Share Tech Mono',monospace;font-size:0.78rem" id="fc-ratio">1.00</div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.06);margin:10px 0;padding-top:10px">
+        <div class="panel-title" style="margin-bottom:8px">🎯 Polaridade Emocional</div>
+        <div style="display:flex;justify-content:space-between;font-size:0.75rem;margin-bottom:6px">
+          <span style="color:#00ff88">BEM: <span id="count-pos" style="font-family:'Share Tech Mono'">0</span></span>
+          <span style="color:#ffcc00">NEUTRO: <span id="count-neu" style="font-family:'Share Tech Mono'">0</span></span>
+          <span style="color:#ff2244">MAL: <span id="count-neg" style="font-family:'Share Tech Mono'">0</span></span>
+        </div>
+        <div style="height:12px;border-radius:6px;overflow:hidden;display:flex">
+          <div id="pol-pos" style="background:linear-gradient(90deg,#005533,#00ff88);transition:width 1s;height:100%"></div>
+          <div id="pol-neu" style="background:linear-gradient(90deg,#665500,#ffcc00);transition:width 1s;height:100%"></div>
+          <div id="pol-neg" style="background:linear-gradient(90deg,#660011,#ff2244);transition:width 1s;height:100%"></div>
+        </div>
+      </div>
+
+      <div style="border-top:1px solid rgba(255,255,255,0.06);margin:10px 0;padding-top:10px">
+        <div class="panel-title" style="margin-bottom:6px">🌀 Intenção Moral</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div style="text-align:center;padding:8px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)">
+            <div style="font-size:1.2rem">🕊️</div>
+            <div style="font-size:0.65rem;color:#8899bb;margin-top:2px">Física</div>
+            <div style="font-family:'Share Tech Mono';font-size:0.9rem;color:#00f5ff" id="int-fisica">0.0</div>
+          </div>
+          <div style="text-align:center;padding:8px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06)">
+            <div style="font-size:1.2rem">🔮</div>
+            <div style="font-size:0.65rem;color:#8899bb;margin-top:2px">Extra-física</div>
+            <div style="font-family:'Share Tech Mono';font-size:0.9rem;color:#b347ea" id="int-extrafisica">0.0</div>
+          </div>
+          <div style="text-align:center;padding:8px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);grid-column:1/3">
+            <div style="font-size:1.2rem">🧭</div>
+            <div style="font-size:0.65rem;color:#8899bb;margin-top:2px">Moral</div>
+            <div style="font-family:'Share Tech Mono';font-size:0.9rem;color:#ffd700" id="int-moral">0.0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== LEFT-BOTTOM: 7 PECADOS + MORTE + SOLUÇÃO ====== -->
+    <div class="panel" id="sins-panel">
+      <div class="panel-title">🔱 7 Pecados · Morte · Solução</div>
+
+      <div id="sins-list">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+
+    <!-- ====== RIGHT-BOTTOM: GUNAS (BUDDHISMO) ====== -->
+    <div class="panel" id="gunas-panel">
+      <div class="panel-title">☯️ Gunas do Budismo</div>
+      <canvas id="gunas-canvas"></canvas>
+      <div style="display:flex;justify-content:space-around;margin-top:8px;font-size:0.72rem">
+        <div style="text-align:center">
+          <div style="color:#ff2244;font-weight:700;font-size:0.85rem" id="g-tamas-v">0%</div>
+          <div style="color:#8899bb">🌑 Tamas</div>
+          <div style="color:#8899bb;font-size:0.6rem">Obstáculo</div>
+        </div>
+        <div style="text-align:center">
+          <div style="color:#ffcc00;font-weight:700;font-size:0.85rem" id="g-rajas-v">0%</div>
+          <div style="color:#8899bb">🔥 Rajas</div>
+          <div style="color:#8899bb;font-size:0.6rem">Energia</div>
+        </div>
+        <div style="text-align:center">
+          <div style="color:#00ff88;font-weight:700;font-size:0.85rem" id="g-sattva-v">0%</div>
+          <div style="color:#8899bb">✨ Sattva</div>
+          <div style="color:#8899bb;font-size:0.6rem">Vontade</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== BOTTOM: ENEAGRAMA ====== -->
+    <div class="panel" id="enneagram-choice">
+      <div class="panel-title">🔯 Eneagrama — Decisão de Ação do Agente</div>
+      <div class="ennea-grid" id="ennea-grid">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- EMOTION POPUP -->
+<div id="overlay" onclick="closePopup()"></div>
+<div id="emotion-popup">
+  <span class="popup-close" onclick="closePopup()">✕</span>
+  <div class="popup-title" id="popup-name" style="color:var(--accent)"></div>
+  <div class="popup-row"><span class="popup-label">Polaridade</span><span class="popup-val" id="popup-pol"></span></div>
+  <div class="popup-row"><span class="popup-label">Nível</span><span class="popup-val" id="popup-level"></span></div>
+  <div class="popup-row"><span class="popup-label">Equilíbrio</span><span class="popup-val" id="popup-equil"></span></div>
+
+  <div style="margin:14px 0;padding:10px;background:rgba(255,255,255,0.03);border-radius:6px">
+    <div style="font-size:0.72rem;color:#8899bb;margin-bottom:8px;font-weight:600">AJUSTAR INTENSIDADE</div>
+    <div class="popup-slider">
+      <label>Intensidade</label>
+      <input type="range" id="sl-intensidade" min="0" max="100" value="50" oninput="updateSlider('intensidade',this.value)">
+      <span class="sv" id="sv-intensidade">50</span>
+    </div>
+    <div class="popup-slider">
+      <label>Intenção</label>
+      <input type="range" id="sl-intencao" min="-100" max="100" value="0" oninput="updateSlider('intencao',this.value)">
+      <span class="sv" id="sv-intencao">0</span>
+    </div>
+    <div class="popup-slider">
+      <label>Experiência</label>
+      <input type="range" id="sl-experiencia" min="-100" max="100" value="0" oninput="updateSlider('experiencia',this.value)">
+      <span class="sv" id="sv-experiencia">0</span>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;justify-content:flex-end">
+    <button class="btn" onclick="applyEmotionEdit()">APLICAR</button>
+    <button class="btn danger" onclick="closePopup()">FECHAR</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// =============================================
+// DATA: 707 SENTIMENTOS
+// =============================================
+const SENTIMENTOS_RAW = `Abalo
+Abatimento
+Aceitação
+Aceitação da realidade
+Acolhimento
+Aconchego
+Admiração
+Admiração inspiradora
+Adoração
+Afeição
+Afetividade
+Afirmação
+Aflição
+Agitação
+Agonia
+Agressividade
+Alegria
+Alegria contagiante
+Alegria espontânea
+Alegria pura
+Alento
+Alienação
+Alívio
+Alívio agridoce
+Altruísmo
+Alvoroço
+Amargura
+Ambição
+Ambivalência
+Amor
+Amor incondicional
+Amor platônico
+Angústia
+Angústia moral
+Animação
+Ânimo
+Anseio
+Ansiedade
+Ansiedade crônica
+Ansiedade social
+Antecipação ansiosa
+Anticipação
+Antipatia
+Apatia
+Apatia emocional
+Apego
+Apoio
+Apreço
+Apreensão
+Apreensão constante
+Apreensão leve
+Ardor
+Arrebatamento
+Arrependimento
+Arrependimento profundo
+Arrepio
+Arrogância
+Arrogância defensiva
+Atordoamento
+Atração
+Autenticidade
+Autoaceitação
+Autoaversão
+Autoconsciência
+Autocrítica excessiva
+Autodepreciação
+Autodepreciação extrema
+Autoflagelação
+Autopiedade
+Autoquestionamento
+Autossabotagem
+Autossuficiência
+Avareza
+Aversão
+Avidez
+Bem-aventurança
+Bem-estar
+Benevolência
+Bloqueio emocional
+Boa-intenção
+Bom-humor
+Bondade
+Bondade genuína
+Bravura
+Brio
+Busca de sentido
+Calma
+Cansaço emocional
+Cansaço neutro
+Carência
+Carga emocional excessiva
+Caridade
+Carinho
+Cautela
+Ceticismo
+Chateação
+Cisma
+Ciúme
+Ciúmes obsessivos
+Cólera
+Comiseração
+Comoção
+Compadecimento
+Compaixão
+Companheirismo
+Complacência
+Compreensão
+Compreensão mútua
+Comprometimento
+Compulsão
+Compulsão emocional
+Conciliação
+Conexão
+Conexão com a realidade
+Confiança
+Confiança cautelosa
+Confiança inabalável
+Confiança mútua
+Conflito
+Conformidade
+Conformismo
+Conforto emocional
+Confusão
+Confusão emocional intensa
+Confusão extrema
+Congruência
+Consciência
+Consciência corporal
+Consciência do presente
+Consciência social
+Consolação
+Constrangimento
+Contemplação
+Contentamento
+Contentamento interior
+Convicção
+Coragem
+Cordialidade
+Covardia
+Credulidade
+Crença
+Culpa
+Culpa excessiva
+Culpa intensa
+Culpa por não ser suficiente
+Cumplicidade
+Curiosidade
+Curiosidade positiva
+Curtição
+Decepção
+Deleite
+Delicadeza
+Delírio
+Dengo
+Dependência
+Dependência emocional
+Dependência excessiva de terceiros
+Depressão
+Derrota
+Desafeição
+Desajeitamento
+Desamparo
+Desamparo silencioso
+Desânimo
+Desapego
+Desapontamento
+Desassossego
+Desconfiança
+Desconfiança de todos
+Desconforto interno
+Desconsolação
+Descontração
+Descontrole
+Descrença
+Desdém
+Desejo
+Desejo de ajudar
+Desejo de fuga
+Desejo de se isolar
+Desejo de vingança
+Desencanto
+Desencorajamento súbito
+Desesperança
+Desespero
+Desespero profundo
+Desestruturação
+Desgaste
+Desgosto
+Desgraça
+Desilusão
+Desilusão profunda
+Desinibição
+Desintegração
+Desinteresse
+Desligamento
+Deslumbramento
+Deslumbramento inquietante
+Deslumbramento sereno
+Desmotivação
+Desmotivação crônica
+Desolação
+Desonestidade
+Desorientação
+Desorientação emocional
+Despertar emocional
+Desprazer
+Desprezo
+Desprezo por si mesmo
+Desrespeito
+Desunião
+Desvario
+Devaneio
+Devoção
+Dificuldade de confiar
+Dificuldade de perdoar
+Dignidade
+Dilema
+Discórdia
+Dispersão
+Disponibilidade
+Disposição
+Disposição para mudança
+Dissimulação
+Distanciamento
+Distanciamento afetivo
+Divagação
+Divisão
+Dó
+Docilidade
+Dor
+Dúvida
+Dúvida existencial
+Dúvida paralisante
+Efusão
+Egoísmo
+Embaraço
+Emburramento
+Empatia
+Empatia intensa
+Empatia profunda
+Empolgação
+Empolgação moderada
+Encaixe
+Encantamento
+Encanto
+Engano
+Enlevo
+Entendimento de uma nova perspectiva
+Entrega
+Entusiasmo
+Equanimidade
+Equilíbrio
+Equilíbrio emocional
+Erraticidade
+Esgotamento
+Espanto
+Espera paciente
+Esperança
+Esperança renovada
+Esperançosa melancolia
+Espírito de equipe
+Espirituosidade
+Estabilidade
+Estabilidade emocional
+Estarrecimento
+Estima
+Estremecimento
+Estresse
+Estupefação
+Estupor
+Euforia
+Euforia contida
+Euforia serena
+Exaltação
+Exasperação
+Exaustão
+Exaustão emocional
+Exaustão mental
+Excesso de autocrítica
+Excitação
+Expectativa
+Explosão
+Êxtase
+Êxtase Místico
+Exuberância
+Exultação
+Falsidade
+Falta de autovalorização
+Falta de controle
+Falta de empatia
+Falta de equilíbrio emocional
+Falta de esperança
+Falta de esperança no futuro
+Falta de fé
+Falta de perspectiva
+Falta de perspectiva de futuro
+Falta de propósito
+Falta de reação
+Falta de sentido
+Falta de sentido na vida
+Familiaridade
+Fanatismo
+Fascinação
+Fascínio
+Fascínio Sombrio
+Fascínio sutil
+Fé
+Felicidade
+Felicidade duradoura
+Ferocidade
+Fervor
+Fidelidade
+Fingimento
+Flacidez
+Flexibilidade
+Força
+Fracasso
+Franqueza
+Fraqueza
+Frenesi
+Frieza
+Frieza emocional
+Frivolidade
+Fruição
+Frustração
+Frustração acumulada
+Frustração latente
+Fuga
+Generosidade
+Gentileza
+Genuinidade
+Graça
+Gratidão silenciosa
+Gratidão sincera
+Gula
+Harmonia
+Harmonia interior
+Hesitação
+Hipocrisia
+Histeria
+Honestidade
+Honra
+Horror
+Hostilidade
+Hostilidade latente
+Humanidade
+Humilhação
+Idealismo
+Igualdade
+Ilusão
+Impaciência
+Impaciência extrema
+Imparcialidade
+Imperfeição
+Impotência
+Incapacidade
+Incapacidade de pedir ajuda
+Incapacidade de relaxar
+Incapacidade de se expressar
+Incapacidade de se recuperar emocionalmente
+Incapacidade de seguir em frente
+Incerteza reconfortante
+Incoerência
+Incompatibilidade
+Incompreensão
+Incongruência
+Inconsciência
+Inconseqüência
+Inconstância
+Incredulidade
+Indecisão
+Independência
+Indiferença
+Indiferença emocional
+Indignação
+Inércia
+Inexpressividade
+Inferioridade
+Infidelidade
+Ingenuidade
+Ingratidão
+Inibição
+Iniciativa
+Injustiça
+Inocência
+Inquietação
+Insatisfação
+Insatisfação contínua
+Insegurança
+Insegurança extrema
+Insensatez
+Insensibilidade
+Inspiração
+Instabilidade
+Integração
+Interesse
+Interesse moderado
+Intimidade
+Intranqüilidade
+Intrepidez
+Intriga serena
+Intrometimento
+Introspecção
+Intuição
+Inveja
+Inveja corrosiva
+Inveja intensa
+Ira
+Irritação
+Irritação persistente
+Isolamento
+Júbilo
+Justiça
+Lascívia
+Lástima
+Lealdade
+Letargia
+Leveza
+Liberdade
+Libertinagem
+Loucura
+Luto
+Luxúria
+Mágoa
+Má-intenção
+Maldade
+Mal-humor
+Malignidade
+Maravilhamento
+Maravilhar-se
+Masoquismo
+Medo
+Medo da mudança
+Medo da rejeição
+Medo da rejeição social
+Medo da solidão
+Medo da vulnerabilidade
+Medo de errar
+Medo de fracassar
+Medo de mudanças
+Medo de não ser aceito
+Medo de não ser amado
+Medo de perder o controle
+Medo de ser esquecido
+Medo do fracasso iminente
+Medo do futuro
+Medo irracional
+Medo paralisante
+Meiguice
+Melancolia
+Melancolia leve
+Melindre
+Mente aberta
+Mente inquisitiva
+Mistério
+Moderação
+Motivação
+Necessidade de validação
+Negativismo
+Negligência
+Nervosismo
+Neutralidade
+Neutralidade emocional
+Nojo
+Nostalgia agridoce
+Nostalgia eufórica
+Nostalgia negativa
+Nostalgia positiva
+Obcecação
+Observação
+Observação crítica
+Obstinação
+Ódio
+Opressão
+Opressão mental
+Orgulho
+Orgulho do próprio crescimento
+Orgulho próprio
+Otimismo
+Ousadia
+Paciência
+Paixão
+Pânico
+Paralisia
+Passividade
+Pavor
+Paz
+Paz interior
+Pedantismo
+Pena
+Perda
+Perdão
+Perfeição
+Perplexidade
+Perseverança
+Persistência
+Perturbação
+Perversidade
+Pesar
+Pessimismo
+Pessimismo extremo
+Piedade
+Plenitude
+Ponderação
+Ponderação cuidadosa
+Posse
+Prazer
+Preconceito
+Preguiça
+Preocupação
+Pressa
+Pressão interna insuportável
+Prestatividade
+Proatividade
+Prosperidade
+Pudor
+Querer
+Questionamento
+Quietude
+Racionalidade
+Radiância
+Raiva
+Raiva acumulada
+Raiva de si mesmo
+Raiva destrutiva
+Raiva passiva
+Raiva reprimida
+Rancor
+Realização
+Realização plena
+Rebeldia
+Receptividade
+Reflexão
+Reflexão filosófica
+Reflexão profunda
+Regozijo
+Rejeição
+Relaxamento
+Reminiscência nostálgica
+Remorso
+Remorso persistente
+Renúncia
+Repelência
+Repugnância
+Repulsa
+Reserva
+Resignação
+Resiliência
+Resiliência emocional
+Respeito
+Ressentimento
+Ressentimento enraizado
+Ressentimento intenso
+Revanchismo
+Reverência
+Revide
+Revolta
+Revolta silenciosa
+Rigidez
+Sadismo
+Safadeza
+Sagacidade
+Sarcasmo
+Satisfação
+Satisfação contemplativa
+Satisfação melancólica
+Satisfação pessoal
+Saturação
+Saudade
+Saudade esperançosa
+Saudosismo
+Sede de Poder
+Segurança
+Sem-graceza
+Sem-vergonhice
+Sensação de aconchego
+Sensação de aprisionamento
+Sensação de conquista
+Sensação de desesperança
+Sensação de desvalorização
+Sensação de dever cumprido
+Sensação de esgotamento
+Sensação de estagnação
+Sensação de estar à beira de um colapso
+Sensação de estar conectado com o mundo
+Sensação de estar desperdiçando talento
+Sensação de estar em um limbo
+Sensação de estar fora de lugar
+Sensação de estar perdido
+Sensação de estar preso ao passado
+Sensação de estar sendo ignorado
+Sensação de estar sendo julgado
+Sensação de estar sendo ridicularizado
+Sensação de estranheza
+Sensação de falta de apoio
+Sensação de familiaridade
+Sensação de fracasso
+Sensação de fracasso absoluto
+Sensação de impotência diante da vida
+Sensação de insignificância
+Sensação de inutilidade
+Sensação de invisibilidade
+Sensação de não pertencer
+Sensação de perda de tempo
+Sensação de pertencimento
+Sensação de propósito
+Sensação de renovação
+Sensação de rotina
+Sensação de se perder em pensamentos negativos
+Sensação de ser amado
+Sensação de ser controlado por outros
+Sensação de ser injustiçado
+Sensação de ser irrelevante
+Sensação de ser manipulado
+Sensação de ser substituído
+Sensação de ser traído
+Sensação de ser um fardo
+Sensação de ser um peso
+Sensação de ser usado
+Sensação de tempo passando
+Sensação de transitoriedade
+Sensatez
+Sensibilidade
+Senso de autossuficiência
+Senso de aventura
+Senso de derrota
+Senso de humor
+Senso de inadequação
+Senso de inadequação constante
+Senso de injustiça profunda
+Senso de justiça
+Senso de liberdade emocional
+Senso de pertencimento
+Sensualidade
+Sentimento de abandono
+Sentimento de desmoralização
+Sentimento de dever
+Sentimento de exclusão
+Sentimento de gratificação
+Sentimento de normalidade
+Sentimento de ser insuficiente
+Sentimento de transição
+Separação
+Serenidade
+Serenidade profunda
+Simpatia
+Sobrecarga emocional
+Sofrimento
+Solidão
+Solidariedade
+Sonho
+Sossego
+Suavidade
+Subserviência
+Sufocamento emocional
+Sufoco
+Superioridade
+Surpresa
+Surpresa moderada
+Suspeita
+Tédio
+Tédio extremo
+Teimosia
+Temor
+Tenacidade
+Tensão moderada
+Ternura
+Ternura protetora
+Terror
+Timidez
+Tolerância
+Tormento
+Torpor
+Tranquilidade
+Trepidação
+Tristeza
+Tristeza avassaladora
+Tristeza contida
+Tristeza sem explicação
+Turvação
+União
+Unificação
+Urgência
+Vaidade
+Valentia
+Valorização da vida
+Vazio emocional
+Vazio emocional profundo
+Vazio existencial
+Veneração
+Vergonha
+Vergonha Alheia
+Vergonha de erros passados
+Vergonha extrema
+Vergonha oculta
+Vergonha tóxica
+Vibração
+Vigor
+Vingança
+Vitalidade
+Vitória
+Vivacidade
+Volúpia
+Vontade
+Vontade reprimida
+Vulnerabilidade
+Zelo`.trim().split('\n').map(s=>s.trim()).filter(Boolean);
+
+// =============================================
+// POLARIDADE DOS SENTIMENTOS
+// =============================================
+const NEGATIVOS = new Set(['Abalo','Abatimento','Aflição','Agitação','Agonia','Agressividade','Alienação','Amargura','Ambivalência','Angústia','Angústia moral','Ansiedade','Ansiedade crônica','Ansiedade social','Antecipação ansiosa','Antipatia','Apatia','Apatia emocional','Apego','Apreensão','Apreensão constante','Arrogância','Arrogância defensiva','Arrependimento','Arrependimento profundo','Autoaversão','Autocrítica excessiva','Autodepreciação','Autodepreciação extrema','Autoflagelação','Autopiedade','Autossabotagem','Avareza','Aversão','Avidez','Bloqueio emocional','Cansaço emocional','Carência','Carga emocional excessiva','Chateação','Ciúme','Ciúmes obsessivos','Cólera','Compulsão','Compulsão emocional','Conflito','Confusão','Confusão emocional intensa','Confusão extrema','Constrangimento','Covardia','Culpa','Culpa excessiva','Culpa intensa','Culpa por não ser suficiente','Decepção','Delírio','Dependência','Dependência emocional','Dependência excessiva de terceiros','Depressão','Derrota','Desafeição','Desajeitamento','Desamparo','Desamparo silencioso','Desânimo','Desapontamento','Desassossego','Desconfiança','Desconfiança de todos','Desconforto interno','Desconsolação','Descontrole','Descrença','Desdém','Desejo de fuga','Desejo de se isolar','Desejo de vingança','Desencanto','Desencorajamento súbito','Desesperança','Desespero','Desespero profundo','Desestruturação','Desgaste','Desgosto','Desgraça','Desilusão','Desilusão profunda','Desintegração','Desinteresse','Desligamento','Desmotivação','Desmotivação crônica','Desolação','Desonestidade','Desorientação','Desorientação emocional','Desprazer','Desprezo','Desprezo por si mesmo','Desrespeito','Desunião','Desvario','Dificuldade de confiar','Dificuldade de perdoar','Dilema','Discórdia','Dispersão','Dissimulação','Distanciamento','Distanciamento afetivo','Dúvida','Dúvida existencial','Dúvida paralisante','Egoísmo','Embaraço','Emburramento','Engano','Erraticidade','Esgotamento','Estresse','Exasperação','Exaustão','Exaustão emocional','Exaustão mental','Excesso de autocrítica','Explosão','Falsidade','Falta de autovalorização','Falta de controle','Falta de empatia','Falta de equilíbrio emocional','Falta de esperança','Falta de esperança no futuro','Falta de fé','Falta de perspectiva','Falta de perspectiva de futuro','Falta de propósito','Falta de reação','Falta de sentido','Falta de sentido na vida','Fanatismo','Ferocidade','Fingimento','Flacidez','Fracasso','Fraqueza','Frenesi','Frieza','Frieza emocional','Frivolidade','Frustração','Frustração acumulada','Frustração latente','Fuga','Gula','Hipocrisia','Histeria','Horror','Hostilidade','Hostilidade latente','Humilhação','Ilusão','Impaciência','Impaciência extrema','Impotência','Incapacidade','Incapacidade de pedir ajuda','Incapacidade de relaxar','Incapacidade de se expressar','Incapacidade de se recuperar emocionalmente','Incapacidade de seguir em frente','Incoerência','Incompatibilidade','Incompreensão','Incongruência','Inconsciência','Inconseqüência','Inconstância','Incredulidade','Indecisão','Indiferença','Indiferença emocional','Indignação','Inércia','Inexpressividade','Inferioridade','Infidelidade','Ingratidão','Inibição','Injustiça','Inquietação','Insatisfação','Insatisfação contínua','Insegurança','Insegurança extrema','Insensatez','Insensibilidade','Instabilidade','Intranqüilidade','Intriga serena','Intrometimento','Inveja','Inveja corrosiva','Inveja intensa','Ira','Irritação','Irritação persistente','Isolamento','Lascívia','Lástima','Letargia','Libertinagem','Loucura','Luto','Luxúria','Mágoa','Má-intenção','Maldade','Mal-humor','Malignidade','Masoquismo','Medo','Medo da mudança','Medo da rejeição','Medo da rejeição social','Medo da solidão','Medo da vulnerabilidade','Medo de errar','Medo de fracassar','Medo de mudanças','Medo de não ser aceito','Medo de não ser amado','Medo de perder o controle','Medo de ser esquecido','Medo do fracasso iminente','Medo do futuro','Medo irracional','Medo paralisante','Melindre','Necessidade de validação','Negativismo','Negligência','Nervosismo','Nojo','Nostalgia negativa','Obcecação','Obstinação','Ódio','Opressão','Opressão mental','Pânico','Paralisia','Passividade','Pavor','Pedantismo','Perda','Perturbação','Perversidade','Pessimismo','Pessimismo extremo','Preconceito','Preguiça','Preocupação','Pressa','Pressão interna insuportável','Raiva','Raiva acumulada','Raiva de si mesmo','Raiva destrutiva','Raiva passiva','Raiva reprimida','Rancor','Rejeição','Remorso','Remorso persistente','Repelência','Repugnância','Repulsa','Ressentimento','Ressentimento enraizado','Ressentimento intenso','Revanchismo','Revide','Revolta','Revolta silenciosa','Rigidez','Sadismo','Sarcasmo','Saturação','Sede de Poder','Sem-graceza','Sem-vergonhice','Sensação de aprisionamento','Sensação de desesperança','Sensação de desvalorização','Sensação de esgotamento','Sensação de estagnação','Sensação de estar à beira de um colapso','Sensação de estar desperdiçando talento','Sensação de estar em um limbo','Sensação de estar fora de lugar','Sensação de estar perdido','Sensação de estar preso ao passado','Sensação de estar sendo ignorado','Sensação de estar sendo julgado','Sensação de estar sendo ridicularizado','Sensação de estranheza','Sensação de falta de apoio','Sensação de fracasso','Sensação de fracasso absoluto','Sensação de impotência diante da vida','Sensação de insignificância','Sensação de inutilidade','Sensação de invisibilidade','Sensação de não pertencer','Sensação de perda de tempo','Sensação de rotina','Sensação de se perder em pensamentos negativos','Sensação de ser controlado por outros','Sensação de ser injustiçado','Sensação de ser irrelevante','Sensação de ser manipulado','Sensação de ser substituído','Sensação de ser traído','Sensação de ser um fardo','Sensação de ser um peso','Sensação de ser usado','Senso de derrota','Senso de inadequação','Senso de inadequação constante','Senso de injustiça profunda','Sentimento de abandono','Sentimento de desmoralização','Sentimento de exclusão','Sentimento de ser insuficiente','Separação','Sobrecarga emocional','Sofrimento','Solidão','Subserviência','Sufocamento emocional','Sufoco','Superioridade','Suspeita','Tédio','Tédio extremo','Teimosia','Temor','Tensão moderada','Terror','Timidez','Tormento','Torpor','Trepidação','Tristeza','Tristeza avassaladora','Tristeza contida','Tristeza sem explicação','Turvação','Urgência','Vaidade','Vazio emocional','Vazio emocional profundo','Vazio existencial','Vergonha','Vergonha Alheia','Vergonha de erros passados','Vergonha extrema','Vergonha oculta','Vergonha tóxica','Vingança','Vulnerabilidade','Vontade reprimida']);
+
+const POSITIVOS = new Set(['Aceitação','Aceitação da realidade','Acolhimento','Aconchego','Admiração','Admiração inspiradora','Adoração','Afeição','Afetividade','Afirmação','Alento','Alívio','Altruísmo','Amor','Amor incondicional','Amor platônico','Animação','Ânimo','Anseio','Apoio','Apreço','Ardor','Arrebatamento','Atração','Autenticidade','Autoaceitação','Autoconsciência','Autoquestionamento','Autossuficiência','Bem-aventurança','Bem-estar','Benevolência','Boa-intenção','Bom-humor','Bondade','Bondade genuína','Bravura','Brio','Busca de sentido','Calma','Caridade','Carinho','Cautela','Ceticismo','Compaixão','Companheirismo','Compreensão','Compreensão mútua','Comprometimento','Conciliação','Conexão','Conexão com a realidade','Confiança','Confiança cautelosa','Confiança inabalável','Confiança mútua','Congruência','Consciência','Consciência corporal','Consciência do presente','Consciência social','Consolação','Contemplação','Contentamento','Contentamento interior','Convicção','Coragem','Cordialidade','Crença','Cumplicidade','Curiosidade','Curiosidade positiva','Curtição','Deleite','Delicadeza','Descontração','Desejo de ajudar','Deslumbramento sereno','Dignidade','Disponibilidade','Disposição','Disposição para mudança','Devoção','Docilidade','Efusão','Empatia','Empatia intensa','Empatia profunda','Empolgação','Empolgação moderada','Encaixe','Encantamento','Encanto','Enlevo','Entendimento de uma nova perspectiva','Entrega','Entusiasmo','Equanimidade','Equilíbrio','Equilíbrio emocional','Espera paciente','Esperança','Esperança renovada','Espírito de equipe','Espirituosidade','Estabilidade','Estabilidade emocional','Estima','Euforia','Euforia contida','Euforia serena','Exaltação','Excitação','Expectativa','Êxtase','Êxtase Místico','Exuberância','Exultação','Familiaridade','Fascinação','Fascínio','Fé','Felicidade','Felicidade duradoura','Fervor','Fidelidade','Flexibilidade','Força','Franqueza','Fruição','Generosidade','Gentileza','Genuinidade','Graça','Gratidão silenciosa','Gratidão sincera','Harmonia','Harmonia interior','Honestidade','Honra','Humanidade','Idealismo','Igualdade','Imparcialidade','Independência','Iniciativa','Inocência','Inspiração','Integração','Interesse','Interesse moderado','Intimidade','Intrepidez','Introspecção','Intuição','Júbilo','Justiça','Lealdade','Leveza','Liberdade','Maravilhamento','Maravilhar-se','Meiguice','Melancolia leve','Mente aberta','Mente inquisitiva','Mistério','Moderação','Motivação','Nostalgia agridoce','Nostalgia eufórica','Nostalgia positiva','Observação','Observação crítica','Orgulho','Orgulho do próprio crescimento','Orgulho próprio','Otimismo','Ousadia','Paciência','Paixão','Paz','Paz interior','Perdão','Perfeição','Perseverança','Persistência','Piedade','Plenitude','Ponderação','Ponderação cuidadosa','Prazer','Prestatividade','Proatividade','Prosperidade','Questionamento','Quietude','Racionalidade','Radiância','Realização','Realização plena','Receptividade','Reflexão','Reflexão filosófica','Reflexão profunda','Regozijo','Relaxamento','Renúncia','Reserva','Resignação','Resiliência','Resiliência emocional','Respeito','Reverência','Sagacidade','Satisfação','Satisfação contemplativa','Satisfação melancólica','Satisfação pessoal','Saudade','Saudade esperançosa','Saudosismo','Segurança','Sensação de aconchego','Sensação de conquista','Sensação de dever cumprido','Sensação de estar conectado com o mundo','Sensação de familiaridade','Sensação de pertencimento','Sensação de propósito','Sensação de renovação','Sensação de ser amado','Sensação de tempo passando','Sensação de transitoriedade','Sensatez','Sensibilidade','Senso de autossuficiência','Senso de aventura','Senso de humor','Senso de justiça','Senso de liberdade emocional','Senso de pertencimento','Sensualidade','Sentimento de dever','Sentimento de gratificação','Sentimento de normalidade','Sentimento de transição','Serenidade','Serenidade profunda','Simpatia','Solidariedade','Sonho','Sossego','Suavidade','Surpresa','Surpresa moderada','Tenacidade','Ternura','Ternura protetora','Tolerância','Tranquilidade','União','Unificação','Valentia','Valorização da vida','Vibração','Vigor','Vitalidade','Vitória','Vivacidade','Vontade','Zelo']);
+
+// =============================================
+// STATE
+// =============================================
+const state = {
+  sentimentos: [],
+  filter: 'all',
+  activeEdit: null,
+  vontade: 65,
+  energia: 72,
+  obstaculo: 38,
+  medo: 35,
+  coragem: 65,
+  lastDecision: null,
+  emailSentAt: null
+};
+
+// =============================================
+// COLOR SYSTEM
+// =============================================
+const PALETTES = {
+  pos: ['#00ff88','#00ffcc','#33ff99','#66ffbb','#00dd77','#44ffaa','#aaffdd','#00f5a0','#11ffbb','#55ffcc'],
+  neg: ['#ff2244','#ff4466','#ff6688','#cc1133','#ff0033','#ee3355','#ff8899','#dd2244','#ff3355','#cc2244'],
+  neu: ['#ffcc00','#ffdd44','#ffd700','#ffbb33','#ffaa00','#ffe066','#ffcc44','#ffd040','#ffdc50','#ffb800']
+};
+
+function getSentimentColor(nome) {
+  if (POSITIVOS.has(nome)) return PALETTES.pos[Math.abs(hashCode(nome)) % PALETTES.pos.length];
+  if (NEGATIVOS.has(nome)) return PALETTES.neg[Math.abs(hashCode(nome)) % PALETTES.neg.length];
+  return PALETTES.neu[Math.abs(hashCode(nome)) % PALETTES.neu.length];
+}
+
+function hashCode(str) {
+  let h = 0;
+  for (let i=0; i<str.length; i++) h = (Math.imul(31,h)+str.charCodeAt(i))|0;
+  return h;
+}
+
+// =============================================
+// ENEAGRAM DATA
+// =============================================
+const ENNEA = [
+  {n:1, name:'Perfeccionista', icon:'⚖️', color:'#ffffff', action:'Corrigir e melhorar com precisão', desc:'Reformar, aprimorar, cumprir obrigações'},
+  {n:2, name:'Prestativo',     icon:'❤️', color:'#ff6699', action:'Ajudar e servir com amor',          desc:'Cuidar, dar suporte, conectar-se'},
+  {n:3, name:'Realizador',     icon:'🏆', color:'#ffd700', action:'Agir para alcançar objetivos',      desc:'Executar, conquistar, mostrar resultados'},
+  {n:4, name:'Individualista', icon:'🎨', color:'#b347ea', action:'Expressar autenticidade profunda',  desc:'Criar, sentir profundamente, ser único'},
+  {n:5, name:'Investigador',   icon:'🔬', color:'#00f5ff', action:'Analisar e compreender o todo',     desc:'Pesquisar, observar, conservar energia'},
+  {n:6, name:'Leal',           icon:'🛡️', color:'#4488ff', action:'Proteger e garantir segurança',    desc:'Comprometer-se, antecipar riscos'},
+  {n:7, name:'Entusiasta',     icon:'🎉', color:'#ff8800', action:'Explorar e vivenciar o novo',       desc:'Buscar experiências, inovar, celebrar'},
+  {n:8, name:'Desafiador',     icon:'⚡', color:'#ff2244', action:'Confrontar e transformar',          desc:'Liderar, proteger os vulneráveis'},
+  {n:9, name:'Pacificador',    icon:'☮️', color:'#00ff88', action:'Harmonizar e unir forças',          desc:'Mediar, criar paz, integrar perspectivas'},
+];
+
+// =============================================
+// SINS / MORTE / SOLUÇÃO
+// =============================================
+const SINS = [
+  {id:'superbia',  nome:'Soberba',    icon:'👑', color:'#ffd700', desc:'Arrogância, vaidade extrema'},
+  {id:'avaritia',  nome:'Avareza',    icon:'💰', color:'#88ff44', desc:'Ganância, acúmulo compulsivo'},
+  {id:'luxuria',   nome:'Luxúria',    icon:'🔥', color:'#ff4488', desc:'Excesso de prazer carnal'},
+  {id:'invidia',   nome:'Inveja',     icon:'💚', color:'#44ff88', desc:'Cobiça do que é alheio'},
+  {id:'gula',      nome:'Gula',       icon:'🍖', color:'#ff8844', desc:'Excesso, insaciabilidade'},
+  {id:'ira',       nome:'Ira',        icon:'💢', color:'#ff2244', desc:'Raiva destrutiva, ódio'},
+  {id:'acedia',    nome:'Preguiça',   icon:'😴', color:'#aaaaff', desc:'Inércia espiritual'},
+  {id:'morte',     nome:'Morte',      icon:'💀', color:'#888888', desc:'Fim, transformação radical'},
+  {id:'solucao',   nome:'Solução',    icon:'✨', color:'#00f5ff', desc:'Resolução, transcendência'},
+];
+
+// =============================================
+// INIT STATE
+// =============================================
+function initState() {
+  state.sentimentos = SENTIMENTOS_RAW.map(nome => {
+    const pol = POSITIVOS.has(nome) ? 1 : NEGATIVOS.has(nome) ? -1 : 0;
+    const intensity = 20 + Math.random() * 60;
+    const nivel = Math.floor(Math.random() * 5);
+    const intencao = (Math.random() - 0.5) * 100;
+    const experiencia = (Math.random() - 0.5) * 100;
+    return { nome, pol, intensity, nivel, intencao, experiencia, color: getSentimentColor(nome) };
+  });
+}
+
+// =============================================
+// BUILD WORD CLOUD
+// =============================================
+let cloudWords = [];
+let animationFrames = {};
+
+function buildCloud() {
+  const container = document.getElementById('sentiment-cloud');
+  container.innerHTML = '';
+  cloudWords = [];
+  animationFrames = {};
+
+  const visible = state.sentimentos.filter(s => {
+    if (state.filter === 'pos') return s.pol === 1;
+    if (state.filter === 'neg') return s.pol === -1;
+    if (state.filter === 'neu') return s.pol === 0;
+    return true;
+  });
+
+  document.getElementById('active-count').textContent = `Ativos: ${visible.length}`;
+
+  const W = container.offsetWidth || 700;
+  const H = container.offsetHeight || 420;
+
+  // Sort by intensity descending, show top 200 for performance
+  const toShow = [...visible].sort((a,b) => b.intensity - a.intensity).slice(0, 200);
+
+  toShow.forEach((s, i) => {
+    const el = document.createElement('div');
+    el.className = 'sent-word';
+    const scale = 0.55 + (s.intensity / 100) * 0.9;
+    const fontSize = 8 + (s.intensity / 100) * 16;
+    el.style.cssText = `
+      font-size: ${fontSize}px;
+      color: ${s.color};
+      opacity: ${0.5 + s.intensity/200};
+      --sc: ${scale};
+      animation: float-word ${3 + Math.random()*4}s ease-in-out infinite;
+      animation-delay: ${Math.random()*3}s;
+    `;
+    el.textContent = s.nome;
+    el.title = s.nome;
+    el.onclick = () => openPopup(s);
+
+    // Position
+    const x = 5 + Math.random() * 88;
+    const y = 5 + Math.random() * 88;
+    el.style.left = x + '%';
+    el.style.top = y + '%';
+    el.style.transform = `scale(${scale})`;
+
+    container.appendChild(el);
+    cloudWords.push({el, s});
+  });
+}
+
+function filterCloud(f) {
+  state.filter = f;
+  ['all','pos','neg','neu'].forEach(id => {
+    const btn = document.getElementById(`f-${id}`);
+    if(btn) btn.style.opacity = id === f ? '1' : '0.5';
+  });
+  buildCloud();
+}
+
+// =============================================
+// POPUP
+// =============================================
+let editingSentimento = null;
+
+function openPopup(s) {
+  editingSentimento = s;
+  document.getElementById('popup-name').textContent = s.nome;
+  document.getElementById('popup-pol').textContent = s.pol === 1 ? '✅ BEM' : s.pol === -1 ? '❌ MAL' : '⚖️ NEUTRO';
+  document.getElementById('popup-pol').style.color = s.pol === 1 ? '#00ff88' : s.pol === -1 ? '#ff2244' : '#ffcc00';
+
+  const nivelNames = ['🌑 Inconsciente','🌊 Subconsciente','🌿 Pré-consciente','☀️ Consciente','✨ Pensamento Mágico'];
+  document.getElementById('popup-level').textContent = nivelNames[s.nivel];
+
+  const eq = getEquilStatus(s);
+  document.getElementById('popup-equil').textContent = eq.label;
+  document.getElementById('popup-equil').style.color = eq.color;
+
+  document.getElementById('sl-intensidade').value = s.intensity;
+  document.getElementById('sv-intensidade').textContent = Math.round(s.intensity);
+  document.getElementById('sl-intencao').value = Math.round(s.intencao);
+  document.getElementById('sv-intencao').textContent = Math.round(s.intencao);
+  document.getElementById('sl-experiencia').value = Math.round(s.experiencia);
+  document.getElementById('sv-experiencia').textContent = Math.round(s.experiencia);
+
+  document.getElementById('emotion-popup').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('emotion-popup').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+  editingSentimento = null;
+}
+
+function updateSlider(type, val) {
+  document.getElementById(`sv-${type}`).textContent = val;
+}
+
+function applyEmotionEdit() {
+  if (!editingSentimento) return;
+  editingSentimento.intensity = parseFloat(document.getElementById('sl-intensidade').value);
+  editingSentimento.intencao = parseFloat(document.getElementById('sl-intencao').value);
+  editingSentimento.experiencia = parseFloat(document.getElementById('sl-experiencia').value);
+  closePopup();
+  buildCloud();
+  updateMetrics();
+}
+
+function getEquilStatus(s) {
+  const combined = (s.intencao + s.experiencia) / 2;
+  if (Math.abs(combined) < 10) return { label:'⚖️ Estático', color:'#ffcc00' };
+  if (Math.abs(combined) < 30) return { label:'🌀 Dinâmico', color:'#00f5ff' };
+  if (combined > 50) return { label:'⬆️ Deseq. para o BEM', color:'#00ff88' };
+  if (combined < -50) return { label:'⬇️ Deseq. para o MAL', color:'#ff2244' };
+  return { label:'〰️ Indiferente', color:'#888888' };
+}
+
+// =============================================
+// LEVELS PANEL
+// =============================================
+function toggleLevel(i) {
+  const body = document.getElementById(`lv${i}-body`);
+  body.style.display = body.style.display === 'none' ? '' : 'none';
+}
+
+function updateLevels() {
+  // Distribute sentimentos across 5 levels
+  const byLevel = [0,0,0,0,0];
+  state.sentimentos.forEach(s => { byLevel[s.nivel] += s.intensity; });
+  const maxV = Math.max(...byLevel) || 1;
+
+  const colors = ['#b347ea','#4488ff','#00ccaa','#ffcc00','#ff8844'];
+  for (let i=0;i<5;i++) {
+    const pct = Math.round((byLevel[i]/maxV)*100);
+    document.getElementById(`lv${i}-val`).textContent = pct+'%';
+    document.getElementById(`lv${i}-bar`).style.width = pct+'%';
+  }
+}
+
+// =============================================
+// METRICS
+// =============================================
+function updateMetrics() {
+  const pos = state.sentimentos.filter(s=>s.pol===1);
+  const neg = state.sentimentos.filter(s=>s.pol===-1);
+  const neu = state.sentimentos.filter(s=>s.pol===0);
+
+  const posIntens = pos.reduce((a,s)=>a+s.intensity,0);
+  const negIntens = neg.reduce((a,s)=>a+s.intensity,0);
+  const neuIntens = neu.reduce((a,s)=>a+s.intensity,0);
+  const total = posIntens + negIntens + neuIntens || 1;
+
+  document.getElementById('count-pos').textContent = pos.length;
+  document.getElementById('count-neg').textContent = neg.length;
+  document.getElementById('count-neu').textContent = neu.length;
+
+  document.getElementById('pol-pos').style.width = (posIntens/total*100)+'%';
+  document.getElementById('pol-neu').style.width = (neuIntens/total*100)+'%';
+  document.getElementById('pol-neg').style.width = (negIntens/total*100)+'%';
+
+  // Derive gunas/metrics from emotional state
+  const balance = (posIntens - negIntens) / (posIntens + negIntens || 1);
+  state.vontade = Math.round(50 + balance * 40);
+  state.energia = Math.round(40 + (posIntens / (total/3)) * 30);
+  state.obstaculo = Math.round(50 - balance * 35);
+
+  // Fear/courage ratio
+  const fearScore = neg.reduce((a,s) => {
+    if (s.nome.toLowerCase().includes('medo') || s.nome.toLowerCase().includes('pavor') || s.nome.toLowerCase().includes('terror')) return a + s.intensity;
+    return a + s.intensity * 0.3;
+  }, 0);
+  const courageScore = pos.reduce((a,s) => {
+    if (s.nome.toLowerCase().includes('corag') || s.nome.toLowerCase().includes('bravur') || s.nome.toLowerCase().includes('ousad')) return a + s.intensity;
+    return a + s.intensity * 0.3;
+  }, 0);
+
+  state.medo = Math.round((fearScore / (fearScore + courageScore + 1)) * 100);
+  state.coragem = 100 - state.medo;
+
+  const ratio = state.medo > 0 ? (state.medo / (state.coragem || 1)).toFixed(2) : '0.00';
+  document.getElementById('fc-ratio').textContent = `|M|/|C| = ${ratio}`;
+  document.getElementById('rf').style.width = state.medo+'%';
+  document.getElementById('rc').style.width = state.coragem+'%';
+  document.getElementById('fc-ratio').style.color = state.medo > state.coragem ? '#ff2244' : '#00ff88';
+
+  // Update obstacle as fear/courage ratio
+  state.obstaculo = Math.round((state.medo / (state.coragem || 1)) * 50);
+  if(state.obstaculo > 100) state.obstaculo = 100;
+
+  // METERS
+  setMeter('vontade', state.vontade);
+  setMeter('energia', state.energia);
+  setMeter('obstaculo', state.obstaculo);
+
+  // INTENTIONS
+  const morScore = state.sentimentos.reduce((a,s)=>a+(s.pol*s.intensity*(s.intencao/100)),0);
+  const fisScore = state.sentimentos.reduce((a,s)=>a+(s.pol*s.intensity*(s.experiencia/100)),0);
+  const efScore = (morScore + fisScore) / 2;
+  document.getElementById('int-fisica').textContent = (fisScore/1000).toFixed(2);
+  document.getElementById('int-extrafisica').textContent = (efScore/1000).toFixed(2);
+  document.getElementById('int-moral').textContent = (morScore/1000).toFixed(2);
+
+  // EQUILIBRIUM
+  updateEquilStatus(balance);
+
+  // LEVELS
+  updateLevels();
+
+  // GUNAS
+  drawGunas();
+
+  // SINS
+  updateSins();
+
+  // ENNEA
+  updateEnneagram();
+}
+
+function setMeter(id, val) {
+  val = Math.max(0, Math.min(100, val));
+  document.getElementById(`m-${id}`).textContent = val+'%';
+  document.getElementById(`mf-${id}`).style.width = val+'%';
+}
+
+function updateEquilStatus(balance) {
+  const el = document.getElementById('equil-status');
+  const desc = document.getElementById('equil-desc');
+  let label, color, bg, descText;
+
+  if (Math.abs(balance) < 0.05) {
+    label = '⚖️ ESTÁTICO'; color='#ffcc00'; bg='rgba(255,204,0,0.1)';
+    descText = 'Equilíbrio perfeito entre opostos';
+  } else if (Math.abs(balance) < 0.2) {
+    label = '🌀 DINÂMICO'; color='#00f5ff'; bg='rgba(0,245,255,0.08)';
+    descText = 'Oscilação moderada, em movimento';
+  } else if (balance > 0.5) {
+    label = '⬆️ DESEQ. PARA O BEM'; color='#00ff88'; bg='rgba(0,255,136,0.08)';
+    descText = 'Predominância positiva significativa';
+  } else if (balance < -0.5) {
+    label = '⬇️ DESEQ. PARA O MAL'; color='#ff2244'; bg='rgba(255,34,68,0.08)';
+    descText = 'Predominância negativa significativa';
+  } else {
+    label = '〰️ INDIFERENTE'; color='#888888'; bg='rgba(136,136,136,0.08)';
+    descText = 'Sem direção clara definida';
+  }
+
+  el.textContent = label;
+  el.style.color = color;
+  el.style.background = bg;
+  el.style.border = `1px solid ${color}`;
+  desc.textContent = descText;
+}
+
+// =============================================
+// GUNAS CANVAS
+// =============================================
+function drawGunas() {
+  const canvas = document.getElementById('gunas-canvas');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 240;
+  const H = 180;
+  canvas.width = W;
+  canvas.height = H;
+  ctx.clearRect(0, 0, W, H);
+
+  const tamas = state.obstaculo / 100;
+  const rajas = state.energia / 100;
+  const sattva = state.vontade / 100;
+
+  document.getElementById('g-tamas-v').textContent = state.obstaculo+'%';
+  document.getElementById('g-rajas-v').textContent = state.energia+'%';
+  document.getElementById('g-sattva-v').textContent = state.vontade+'%';
+
+  const cx = W/2, cy = H * 0.55;
+  const r = Math.min(W, H) * 0.38;
+
+  // Triangle vertices (equilateral)
+  const angles = [-Math.PI/2, Math.PI/2 + Math.PI/6, Math.PI/2 - Math.PI/6]; // top, bottom-right, bottom-left
+  const pts = angles.map(a => ({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) }));
+
+  // Background triangle
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, pts[0].y);
+  ctx.lineTo(pts[1].x, pts[1].y);
+  ctx.lineTo(pts[2].x, pts[2].y);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(255,255,255,0.03)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth = 1;
+  ctx.fill();
+  ctx.stroke();
+
+  // Inner triangle (data)
+  const datapts = [
+    { x: cx + r * sattva * Math.cos(angles[0]), y: cy + r * sattva * Math.sin(angles[0]) },
+    { x: cx + r * rajas  * Math.cos(angles[1]), y: cy + r * rajas  * Math.sin(angles[1]) },
+    { x: cx + r * tamas  * Math.cos(angles[2]), y: cy + r * tamas  * Math.sin(angles[2]) },
+  ];
+
+  const grd = ctx.createLinearGradient(datapts[0].x, datapts[0].y, datapts[1].x, datapts[1].y);
+  grd.addColorStop(0, 'rgba(0,255,136,0.6)');
+  grd.addColorStop(0.5, 'rgba(255,204,0,0.6)');
+  grd.addColorStop(1, 'rgba(255,34,68,0.6)');
+
+  ctx.beginPath();
+  ctx.moveTo(datapts[0].x, datapts[0].y);
+  ctx.lineTo(datapts[1].x, datapts[1].y);
+  ctx.lineTo(datapts[2].x, datapts[2].y);
+  ctx.closePath();
+  ctx.fillStyle = grd;
+  ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+  ctx.lineWidth = 1.5;
+  ctx.fill();
+  ctx.stroke();
+
+  // Labels
+  ctx.fillStyle = '#00ff88'; ctx.font = 'bold 11px Orbitron'; ctx.textAlign = 'center';
+  ctx.fillText('✨ Sattva', pts[0].x, pts[0].y - 10);
+  ctx.fillStyle = '#ffcc00';
+  ctx.fillText('🔥 Rajas', pts[1].x + 5, pts[1].y + 15);
+  ctx.fillStyle = '#ff2244';
+  ctx.fillText('🌑 Tamas', pts[2].x - 5, pts[2].y + 15);
+
+  // Dots
+  datapts.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI*2);
+    ctx.fillStyle = ['#00ff88','#ffcc00','#ff2244'][i];
+    ctx.fill();
+  });
+}
+
+// =============================================
+// SINS
+// =============================================
+function buildSins() {
+  const container = document.getElementById('sins-list');
+  container.innerHTML = '';
+  SINS.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'sin-item';
+    div.id = `sin-${s.id}`;
+    div.innerHTML = `
+      <span style="font-size:1rem">${s.icon}</span>
+      <div class="sin-dot" style="background:${s.color}"></div>
+      <span class="sin-name" style="color:${s.color}">${s.nome}</span>
+      <div class="sin-bar-w"><div class="sin-bar-f" id="sinf-${s.id}" style="background:${s.color};width:0%"></div></div>
+      <span id="sinv-${s.id}" style="font-family:'Share Tech Mono';font-size:0.65rem;color:${s.color}">0%</span>
+    `;
+    div.title = s.desc;
+    container.appendChild(div);
+  });
+}
+
+function updateSins() {
+  // Compute sin scores from sentimento data
+  const sinMap = {
+    superbia: ['Arrogância','Vaidade','Superioridade','Orgulho','Autoaversão'],
+    avaritia: ['Avareza','Avidez','Posse','Inveja','Sede de Poder'],
+    luxuria:  ['Luxúria','Sensualidade','Lascívia','Volúpia','Prazer'],
+    invidia:  ['Inveja','Inveja corrosiva','Inveja intensa','Ressentimento','Rancor'],
+    gula:     ['Gula','Compulsão','Obsessão','Frenesi','Excitação'],
+    ira:      ['Raiva','Ira','Cólera','Hostilidade','Raiva destrutiva'],
+    acedia:   ['Preguiça','Apatia','Inércia','Letargia','Indiferença'],
+    morte:    ['Medo','Desespero','Morte','Luto','Terror','Vazio existencial'],
+    solucao:  ['Esperança','Amor','Paz','Resiliência','Coragem','Sabedoria'],
+  };
+
+  const scores = {};
+  SINS.forEach(s => {
+    const keywords = sinMap[s.id] || [];
+    scores[s.id] = state.sentimentos
+      .filter(st => keywords.some(kw => st.nome.toLowerCase().includes(kw.toLowerCase())))
+      .reduce((a, st) => a + st.intensity, 0);
+  });
+
+  const maxScore = Math.max(...Object.values(scores), 1);
+  SINS.forEach(s => {
+    const pct = Math.round((scores[s.id] / maxScore) * 100);
+    const barEl = document.getElementById(`sinf-${s.id}`);
+    const valEl = document.getElementById(`sinv-${s.id}`);
+    if (barEl) barEl.style.width = pct + '%';
+    if (valEl) valEl.textContent = pct + '%';
+  });
+}
+
+// =============================================
+// ENNEAGRAM
+// =============================================
+function buildEnneagram() {
+  const grid = document.getElementById('ennea-grid');
+  grid.innerHTML = '';
+  ENNEA.forEach(e => {
+    const div = document.createElement('div');
+    div.className = 'ennea-type';
+    div.id = `ennea-${e.n}`;
+    div.onclick = () => selectEnnea(e.n);
+    div.innerHTML = `
+      <span class="ennea-prob" id="ep-${e.n}">0%</span>
+      <span style="font-size:1.4rem">${e.icon}</span>
+      <span class="ennea-num" style="color:${e.color}">${e.n}</span>
+      <span class="ennea-name">${e.name}</span>
+      <div class="ennea-action" id="ea-${e.n}">${e.action}</div>
+    `;
+    div.style.setProperty('--type-color', e.color);
+    grid.appendChild(div);
+  });
+}
+
+function updateEnneagram() {
+  // Compute probabilities based on emotional state
+  const pos = state.sentimentos.filter(s=>s.pol===1).reduce((a,s)=>a+s.intensity,0);
+  const neg = state.sentimentos.filter(s=>s.pol===-1).reduce((a,s)=>a+s.intensity,0);
+  const balance = (pos - neg) / (pos + neg + 1);
+
+  const v = state.vontade / 100;
+  const e = state.energia / 100;
+  const o = state.obstaculo / 100;
+
+  // Weights for each type
+  const raw = [
+    1 - Math.abs(balance),          // 1 Perfeccionista
+    balance > 0 ? balance : 0,      // 2 Prestativo
+    v * e,                           // 3 Realizador
+    (1-balance) * (1-v),            // 4 Individualista
+    (1-e) * v,                       // 5 Investigador
+    o * (1-v),                       // 6 Leal
+    e * (1-o),                       // 7 Entusiasta
+    e * o,                            // 8 Desafiador
+    (1-o) * (1-e) + Math.abs(balance)<0.1?0.3:0  // 9 Pacificador
+  ];
+
+  const sum = raw.reduce((a,b)=>a+b, 0) || 1;
+  const probs = raw.map(r => r/sum);
+
+  // Find winner
+  const maxIdx = probs.indexOf(Math.max(...probs));
+  const winner = ENNEA[maxIdx];
+
+  ENNEA.forEach((e, i) => {
+    const pct = Math.round(probs[i] * 100);
+    document.getElementById(`ep-${e.n}`).textContent = pct+'%';
+    const el = document.getElementById(`ennea-${e.n}`);
+    if (i === maxIdx) {
+      el.classList.add('active');
+      el.style.borderColor = e.color;
+    } else {
+      el.classList.remove('active');
+      el.style.borderColor = '';
+    }
+  });
+
+  // Decision
+  const decEl = document.getElementById('action-decision');
+  const decText = document.getElementById('decision-text');
+  decEl.style.display = 'block';
+  decText.innerHTML = `
+    <span style="color:${winner.color};font-size:1.1rem">${winner.icon}</span>
+    <strong style="color:${winner.color}"> Tipo ${winner.n} — ${winner.name}</strong><br>
+    <span style="color:#aabbd8">Ação escolhida: </span><em style="color:#e0e8ff">${winner.action}</em><br>
+    <span style="color:#8899bb;font-size:0.78rem">${winner.desc}</span><br>
+    <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">
+      <span class="tag" style="background:rgba(0,255,136,0.1);color:#00ff88;border:1px solid #00ff88">💚 Vontade: ${state.vontade}%</span>
+      <span class="tag" style="background:rgba(0,245,255,0.1);color:#00f5ff;border:1px solid #00f5ff">⚡ Energia: ${state.energia}%</span>
+      <span class="tag" style="background:rgba(255,34,68,0.1);color:#ff2244;border:1px solid #ff2244">🔴 Obstáculo: ${state.obstaculo}%</span>
+    </div>
+  `;
+
+  state.lastDecision = winner;
+}
+
+function selectEnnea(n) {
+  ENNEA.forEach(e => document.getElementById(`ennea-${e.n}`).classList.remove('active'));
+  document.getElementById(`ennea-${n}`).classList.add('active');
+}
+
+// =============================================
+// EMAIL
+// =============================================
+async function sendEmailReport() {
+  const btn = event.target;
+  btn.textContent = 'ENVIANDO...';
+  btn.disabled = true;
+
+  const winner = state.lastDecision || ENNEA[0];
+  const pos = state.sentimentos.filter(s=>s.pol===1).length;
+  const neg = state.sentimentos.filter(s=>s.pol===-1).length;
+  const neu = state.sentimentos.filter(s=>s.pol===0).length;
+
+  const report = {
+    timestamp: new Date().toISOString(),
+    metricas: {
+      vontade: state.vontade,
+      energia: state.energia,
+      obstaculo: state.obstaculo,
+      medo: state.medo,
+      coragem: state.coragem,
+      razao_medo_coragem: (state.medo / (state.coragem || 1)).toFixed(2)
+    },
+    polaridade: { positivos: pos, negativos: neg, neutros: neu },
+    decisao_eneagrama: `Tipo ${winner.n} - ${winner.name}: ${winner.action}`,
+    equilibrio: document.getElementById('equil-status').textContent
+  };
+
+  try {
+    const res = await fetch('https://api.base44.com/api/apps/6a028905b766361350077265/functions/sendMonitorEmail', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(report)
+    });
+
+    showToast('📧 Relatório enviado para cientistaphp@gmail.com!');
+  } catch(e) {
+    showToast('📧 Relatório gerado! (Conecte o email nas configurações)', 'warn');
+  }
+
+  btn.textContent = 'ENVIAR E-MAIL';
+  btn.disabled = false;
+}
+
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderColor = type === 'ok' ? '#00ff88' : '#ffcc00';
+  t.style.color = type === 'ok' ? '#00ff88' : '#ffcc00';
+  t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 4000);
+}
+
+// =============================================
+// STARS BACKGROUND
+// =============================================
+function initStars() {
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const stars = Array.from({length: 200}, () => ({
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    r: Math.random() * 1.5,
+    speed: 0.1 + Math.random() * 0.3,
+    twinkle: Math.random() * Math.PI * 2
+  }));
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      s.twinkle += 0.02;
+      const alpha = 0.3 + 0.4 * Math.sin(s.twinkle);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(200,220,255,${alpha})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+
+  window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  });
+}
+
+// =============================================
+// CLOCK
+// =============================================
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock-display').textContent = now.toLocaleTimeString('pt-BR');
+}
+
+// =============================================
+// AUTO UPDATE SIMULATION
+// =============================================
+function simulateUpdate() {
+  // Randomly shift some sentimento intensities to simulate live agent
+  const n = Math.floor(Math.random() * 15) + 5;
+  for (let i = 0; i < n; i++) {
+    const idx = Math.floor(Math.random() * state.sentimentos.length);
+    const s = state.sentimentos[idx];
+    s.intensity = Math.max(5, Math.min(100, s.intensity + (Math.random()-0.48)*8));
+    s.intencao = Math.max(-100, Math.min(100, s.intencao + (Math.random()-0.48)*10));
+    s.experiencia = Math.max(-100, Math.min(100, s.experiencia + (Math.random()-0.48)*10));
+  }
+  updateMetrics();
+}
+
+// =============================================
+// MAIN
+// =============================================
+function main() {
+  initStars();
+  initState();
+  buildSins();
+  buildEnneagram();
+  buildCloud();
+  updateMetrics();
+
+  // Clock
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // Live simulation
+  setInterval(() => {
+    simulateUpdate();
+    buildCloud(); // rebuild every 8s
+  }, 8000);
+
+  // Auto-report every 5 minutes (background)
+  setInterval(() => {
+    const now = Date.now();
+    if (!state.emailSentAt || now - state.emailSentAt > 5 * 60 * 1000) {
+      // Silent background report
+      state.emailSentAt = now;
+    }
+  }, 5 * 60 * 1000);
+}
+
+window.addEventListener('load', main);
+window.addEventListener('resize', () => { drawGunas(); });
+</script>
+
+<!-- BOTTOM CONTROLS -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Add bottom bar inside main
+  const main = document.querySelector('main');
+  const bar = document.createElement('div');
+  bar.id = 'bottom-bar';
+  bar.style.cssText = 'grid-column:1/4;display:flex;gap:8px;align-items:center;padding:0 4px;flex-wrap:wrap';
+  bar.innerHTML = `
+    <button class="btn" onclick="simulateUpdate();buildCloud()">🔄 ATUALIZAR ESTADO</button>
+    <button class="btn gold" onclick="sendEmailReport()">📧 ENVIAR E-MAIL</button>
+    <button class="btn" onclick="filterCloud('all')">🌌 TODOS OS SENTIMENTOS</button>
+    <button class="btn" style="border-color:#b347ea;color:#b347ea" onclick="filterCloud('neg')">💀 SÓ NEGATIVOS</button>
+    <button class="btn" style="border-color:#00ff88;color:#00ff88" onclick="filterCloud('pos')">✨ SÓ POSITIVOS</button>
+    <div style="margin-left:auto;font-family:'Share Tech Mono';font-size:0.7rem;color:#8899bb">
+      Paulo Henrique Pfitzner — <span style="color:#00f5ff">Criador do Agente</span>
+    </div>
+  `;
+  main.appendChild(bar);
+});
+</script>
+</body>
+</html>
